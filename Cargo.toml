@@ -13,7 +13,11 @@ name = "echo"
 
 [[bin]]
 path = "src/bin/unique-ids.rs"
-name = "echo"
+name = "unique-ids"
+
+[[bin]]
+path = "src/bin/broadcast.rs"
+name = "broadcast"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

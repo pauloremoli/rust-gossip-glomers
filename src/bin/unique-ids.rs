@@ -1,7 +1,7 @@
-use anyhow::{bail, Context};
+use anyhow::bail;
 use rust_dist_sys_challenge::*;
 use serde::{Deserialize, Serialize};
-use std::io::{StdoutLock, Write};
+use std::io::StdoutLock;
 use ulid::Ulid;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -14,7 +14,9 @@ pub enum Payload {
     },
     InitOk {},
     Generate {},
-    GenerateOk { id: String},
+    GenerateOk {
+        id: String,
+    },
 }
 
 pub struct UniqueNode {
@@ -25,38 +27,22 @@ impl Node<Payload> for UniqueNode {
     fn step(&mut self, input: Message<Payload>, output: &mut StdoutLock) -> anyhow::Result<()> {
         match input.body.payload {
             Payload::Init { .. } => {
-                let reply = Message {
-                    src: input.dest,
-                    dest: input.src,
-                    body: Body {
-                        msg_id: Some(self.id),
-                        in_reply_to: input.body.msg_id,
-                        payload: Payload::InitOk {},
-                    },
-                };
-
-                serde_json::to_writer(&mut *output, &reply)
-                    .context("Failed to serialize response to Init")?;
-                output.write_all(b"\n").context("write line break")?;
+                Self::reply(input, output, Payload::InitOk {}, self.id)?;
                 self.id += 1;
             }
             Payload::InitOk { .. } => {
+                self.id += 1;
                 bail!("Received InitOk");
             }
             Payload::Generate {} => {
-                let reply = Message {
-                    src: input.dest,
-                    dest: input.src,
-                    body: Body {
-                        msg_id: Some(self.id),
-                        in_reply_to: input.body.msg_id,
-                        payload: Payload::GenerateOk { id: Ulid::new().to_string() },
+                Self::reply(
+                    input,
+                    output,
+                    Payload::GenerateOk {
+                        id: Ulid::new().to_string(),
                     },
-                };
-
-                serde_json::to_writer(&mut *output, &reply)
-                    .context("Failed to serialize response to Init")?;
-                output.write_all(b"\n").context("write line break")?;
+                    self.id,
+                )?;
                 self.id += 1;
             }
             Payload::GenerateOk { .. } => {}

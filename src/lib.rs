@@ -20,6 +20,26 @@ pub struct Body<Payload> {
 
 pub trait Node<Payload> {
     fn step(&mut self, input: Message<Payload>, output: &mut StdoutLock) -> anyhow::Result<()>;
+
+    fn reply(input: Message<Payload>, output: &mut StdoutLock, payload: Payload, msg_id: usize) -> anyhow::Result<()> 
+    where Message<Payload>: Serialize
+    {
+        let reply = Message {
+            src: input.dest,
+            dest: input.src,
+            body: Body {
+                msg_id: Some(msg_id),
+                in_reply_to: input.body.msg_id,
+                payload,
+            },
+        };
+
+        serde_json::to_writer(&mut *output, &reply)
+            .context("Failed to serialize response to Echo")?;
+
+        output.write_all(b"\n").context("write line break")?;
+        Ok(())
+    }
 }
 
 pub fn main_loop<S, Payload>(mut state: S) -> anyhow::Result<()>

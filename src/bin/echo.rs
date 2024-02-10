@@ -1,7 +1,7 @@
-use anyhow::{bail, Context};
+use anyhow::bail;
 use rust_dist_sys_challenge::*;
 use serde::{Deserialize, Serialize};
-use std::io::{StdoutLock, Write};
+use std::io::StdoutLock;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type")]
@@ -18,8 +18,6 @@ pub enum Payload {
         node_ids: Vec<String>,
     },
     InitOk {},
-    Generate {},
-    GenerateOk {},
 }
 
 pub struct EchoNode {
@@ -30,39 +28,15 @@ impl Node<Payload> for EchoNode {
     fn step(&mut self, input: Message<Payload>, output: &mut StdoutLock) -> anyhow::Result<()> {
         match input.body.payload {
             Payload::Init { .. } => {
-                let reply = Message {
-                    src: input.dest,
-                    dest: input.src,
-                    body: Body {
-                        msg_id: Some(self.id),
-                        in_reply_to: input.body.msg_id,
-                        payload: Payload::InitOk {},
-                    },
-                };
-
-                serde_json::to_writer(&mut *output, &reply)
-                    .context("Failed to serialize response to Init")?;
-                output.write_all(b"\n").context("write line break")?;
+                Self::reply(input, output, Payload::InitOk {}, self.id)?;
                 self.id += 1;
             }
             Payload::InitOk { .. } => {
                 bail!("Received InitOk");
             }
-            Payload::Echo { echo } => {
-                let reply = Message {
-                    src: input.dest,
-                    dest: input.src,
-                    body: Body {
-                        msg_id: Some(self.id),
-                        in_reply_to: input.body.msg_id,
-                        payload: Payload::EchoOk { echo },
-                    },
-                };
-
-                serde_json::to_writer(&mut *output, &reply)
-                    .context("Failed to serialize response to Echo")?;
-
-                output.write_all(b"\n").context("write line break")?;
+            Payload::Echo { ref echo } => {
+                let echo = echo.clone();
+                Self::reply(input, output, Payload::EchoOk { echo }, self.id)?;
                 self.id += 1;
             }
             Payload::EchoOk { .. } => {}
