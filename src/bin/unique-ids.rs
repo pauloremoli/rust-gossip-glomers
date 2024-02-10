@@ -1,5 +1,5 @@
 use anyhow::bail;
-use rust_dist_sys_challenge::*;
+use gossip_glomers::*;
 use serde::{Deserialize, Serialize};
 use std::io::StdoutLock;
 use ulid::Ulid;
