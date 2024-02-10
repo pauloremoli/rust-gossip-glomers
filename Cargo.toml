@@ -8,9 +8,12 @@ edition = "2021"
 path = "src/lib.rs"
 
 [[bin]]
-path = "src/main.rs"
-name = "main"
+path = "src/bin/echo.rs"
+name = "echo"
 
+[[bin]]
+path = "src/bin/unique-ids.rs"
+name = "echo"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -18,3 +21,4 @@ name = "main"
 anyhow = "1.0.79"
 serde = { version = "1.0.196", features = ["derive"] }
 serde_json = "1.0.113"
+ulid = "1"
